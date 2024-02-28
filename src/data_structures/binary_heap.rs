@@ -459,7 +459,7 @@ mod tests {
 
                 for j in 0..i {
                     assert_eq!(heap.len(), i - j);
-                    assert_eq!(heap.min(), &list[j]);
+                    assert_eq!(heap.min(), Some(&list[j]));
                     assert_eq!(heap.extract_min(), list[j]);
                 }
 
@@ -467,7 +467,7 @@ mod tests {
 
                 for j in 0..i {
                     assert_eq!(heap.len(), i - j);
-                    assert_eq!(heap.min(), &list[j]);
+                    assert_eq!(heap.min(), Some(&list[j]));
                     heap.remove(&list[j]);
                 }
 
@@ -475,7 +475,7 @@ mod tests {
 
                 for j in 0..i {
                     assert_eq!(heap.len(), i - j);
-                    assert_eq!(heap.min(), &list[0]);
+                    assert_eq!(heap.min(), Some(&list[0]));
                     heap.remove(&list[i - 1 - j]);
                 }
 
