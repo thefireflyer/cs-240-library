@@ -7,6 +7,8 @@
 | Class | CS240 2963 |
 | Professor | Darrell Criss |
 
+[![Rust](https://github.com/thefireflyer/cs-240-library/actions/workflows/rust.yml/badge.svg)](https://github.com/thefireflyer/cs-240-library/actions/workflows/rust.yml)
+
 ## Organization
 
 - [Binary Heap](src/data_structures/binary_heap.rs)
