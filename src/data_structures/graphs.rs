@@ -8,7 +8,10 @@ pub mod undirected_simple_graph;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-pub trait Graph: IntoIterator {
+pub trait Graph {
+    type Item;
+
+    fn get_all(&self) -> Vec<Self::Item>;
     fn get_adj(&self, node: &Self::Item) -> HashSet<Self::Item>;
 
     fn len(&self) -> usize;
@@ -17,11 +20,11 @@ pub trait Graph: IntoIterator {
 ///////////////////////////////////////////////////////////////////////////////
 
 pub trait GraphMut: Graph {
-    fn insert_node(&mut self, node: Self::Item) -> bool;
-    fn remove_node(&mut self, node: Self::Item) -> bool;
+    fn insert_node(&mut self, node: Self::Item, adj: Vec<Self::Item>);
+    fn remove_node(&mut self, node: Self::Item);
 
-    fn insert_edge(&mut self, from: Self::Item, to: Self::Item) -> bool;
-    fn remove_edge(&mut self, from: Self::Item, to: Self::Item) -> bool;
+    fn insert_edge(&mut self, from: Self::Item, to: Self::Item);
+    fn remove_edge(&mut self, from: Self::Item, to: Self::Item);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -55,19 +58,20 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-pub fn depth_first_search<T: Graph>(graph: T)
+pub fn depth_first_search<T: Graph>(graph: T) -> HashMap<T::Item, Option<T::Item>>
 where
-    T: Clone,
     T::Item: Eq + Hash + Clone,
 {
     let mut known: HashMap<T::Item, Option<T::Item>> = HashMap::new();
 
-    for origin in graph.clone() {
+    for origin in graph.get_all() {
         if !known.contains_key(&origin) {
             known.insert(origin.clone(), None);
             dfs_visit(&graph, origin.clone(), &mut known);
         }
     }
+
+    known
 }
 
 //---------------------------------------------------------------------------//
