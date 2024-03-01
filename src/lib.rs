@@ -99,19 +99,10 @@ pub mod data_structures {
         mod shared_test_cases;
     }
 
-    pub mod sets {
-        pub mod hashset;
-    }
-
-    pub mod maps {
-        pub mod avl;
-        pub mod bst;
-    }
-
     pub mod binary_heap;
-    pub mod graphs {
-        pub mod undirected_simple_graph;
-    }
+    pub mod graphs;
+    pub mod maps;
+    pub mod sets;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

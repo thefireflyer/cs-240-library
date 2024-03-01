@@ -13,8 +13,6 @@ pub struct Graph<T>
 where
     T: Ord + fmt::Debug + Hash + Clone,
 {
-    // Set (nodes)
-    nodes: HashSet<T>,
     // Map (node -> set of adj nodes)
     adj: HashMap<T, HashSet<T>>,
 }
@@ -29,7 +27,6 @@ where
 
     pub fn new() -> Self {
         Self {
-            nodes: HashSet::new(),
             adj: HashMap::new(),
         }
     }
@@ -37,8 +34,6 @@ where
     //-----------------------------------------------------------------------//
 
     pub fn insert_node(&mut self, node: T, adj: Vec<T>) {
-        self.nodes.insert(node.clone());
-
         for neighbor in &adj {
             if let Some(links) = self.adj.get_mut(&neighbor) {
                 links.insert(node.clone());
@@ -58,8 +53,7 @@ where
             }
         }
 
-        self.adj.remove(&node);
-        self.nodes.remove(&node)
+        self.adj.remove(&node).is_some()
     }
 
     //-----------------------------------------------------------------------//
@@ -97,14 +91,55 @@ where
     //-----------------------------------------------------------------------//
 
     pub fn len(&self) -> usize {
-        self.nodes.len()
+        self.adj.keys().len()
     }
 
     //-----------------------------------------------------------------------//
 
-    pub fn breadth_first_search(&self, origin: &T) -> Vec<Vec<T>> {
-        todo!()
+    pub fn breadth_first_search(&self, origin: T) -> HashMap<T, (i32, T)> {
+        let mut level = 1;
+        let mut frontier = vec![origin];
+        let mut known = HashMap::new();
+
+        while frontier.len() > 0 {
+            let mut new_frontier = vec![];
+            for node in frontier {
+                for adj in self.get_adj(&node) {
+                    if !known.contains_key(&adj) {
+                        known.insert(adj.clone(), (level, node.clone()));
+                        new_frontier.push(adj);
+                    }
+                }
+            }
+            level += 1;
+            frontier = new_frontier;
+        }
+
+        known
     }
+
+    //-----------------------------------------------------------------------//
+
+    pub fn depth_first_search(&self) {
+        let mut known: HashMap<T, Option<T>> = HashMap::new();
+        for origin in self.adj.keys() {
+            if !known.contains_key(origin) {
+                known.insert(origin.clone(), None);
+                self.dfs_visit(origin.clone(), &mut known);
+            }
+        }
+    }
+
+    fn dfs_visit(&self, origin: T, known: &mut HashMap<T, Option<T>>) {
+        for node in self.get_adj(&origin) {
+            if !known.contains_key(&node) {
+                known.insert(node.clone(), Some(origin.clone()));
+                self.dfs_visit(node, known);
+            }
+        }
+    }
+
+    //-----------------------------------------------------------------------//
 
     pub fn breadth_first_search_iter(self, origin: T) -> BreadthFirstSearch<T> {
         BreadthFirstSearch {
