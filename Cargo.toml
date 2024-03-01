@@ -9,4 +9,6 @@ edition = "2021"
 anyhow = "1.0.79"
 proptest = "1.4.0"
 prusti-contracts = "0.2.0"
+ron = "0.8.1"
+serde = { version = "1.0.197", features = ["derive", "rc"] }
 tailcall = "1.0.1"

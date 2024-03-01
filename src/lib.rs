@@ -109,6 +109,9 @@ pub mod data_structures {
     }
 
     pub mod binary_heap;
+    pub mod graphs {
+        pub mod undirected_simple_graph;
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
