@@ -4,14 +4,13 @@ use std::{
     collections::{HashMap, HashSet},
     fmt::{self, Debug},
     hash::Hash,
-    slice::Iter,
 };
 
 use super::{Graph, GraphMut};
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct UndirectedGraph<T>
 where
     T: Ord + fmt::Debug + Hash + Clone,
