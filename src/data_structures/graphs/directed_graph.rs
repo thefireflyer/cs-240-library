@@ -11,7 +11,7 @@ use super::{Graph, GraphMut};
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct UndirectedGraph<T>
+pub struct DirectedGraph<T>
 where
     T: Ord + fmt::Debug + Hash + Clone,
 {
@@ -21,7 +21,7 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> UndirectedGraph<T>
+impl<T> DirectedGraph<T>
 where
     T: Ord + fmt::Debug + Hash + Clone,
 {
@@ -34,25 +34,11 @@ where
     }
 
     //-----------------------------------------------------------------------//
-
-    fn inner_insert_edge(&mut self, from: &T, to: &T) {
-        if let Some(links) = self.adj.get_mut(from) {
-            links.insert(to.clone());
-        }
-    }
-
-    fn inner_remove_edge(&mut self, from: &T, to: &T) {
-        if let Some(links) = self.adj.get_mut(from) {
-            links.remove(to);
-        }
-    }
-
-    //-----------------------------------------------------------------------//
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> Graph for UndirectedGraph<T>
+impl<T> Graph for DirectedGraph<T>
 where
     T: Ord + fmt::Debug + Hash + Clone,
 {
@@ -73,45 +59,33 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> GraphMut for UndirectedGraph<T>
+impl<T> GraphMut for DirectedGraph<T>
 where
     T: Ord + fmt::Debug + Hash + Clone,
 {
     //-----------------------------------------------------------------------//
 
     fn insert_node(&mut self, node: Self::Item, adj: Vec<Self::Item>) {
-        for neighbor in &adj {
-            if let Some(links) = self.adj.get_mut(&neighbor) {
-                links.insert(node.clone());
-            }
-        }
-
         self.adj
             .insert(node.clone(), HashSet::from_iter(adj.into_iter()));
     }
 
     fn remove_node(&mut self, node: Self::Item) {
-        let adj = self.get_adj(&node);
-
-        for neighbor in &adj {
-            if let Some(links) = self.adj.get_mut(neighbor) {
-                links.remove(&node);
-            }
-        }
-
         self.adj.remove(&node);
     }
 
     //-----------------------------------------------------------------------//
 
-    fn insert_edge(&mut self, left: Self::Item, right: Self::Item) {
-        self.inner_insert_edge(&left, &right);
-        self.inner_insert_edge(&right, &left);
+    fn insert_edge(&mut self, from: Self::Item, to: Self::Item) {
+        if let Some(links) = self.adj.get_mut(&from) {
+            links.insert(to.clone());
+        }
     }
 
-    fn remove_edge(&mut self, left: Self::Item, right: Self::Item) {
-        self.inner_remove_edge(&left, &right);
-        self.inner_remove_edge(&right, &left);
+    fn remove_edge(&mut self, from: Self::Item, to: Self::Item) {
+        if let Some(links) = self.adj.get_mut(&from) {
+            links.remove(&to);
+        }
     }
 
     //-----------------------------------------------------------------------//
@@ -133,7 +107,7 @@ mod tests {
     fn construction() {
         for i in 0..500 {
             println!("--- case {} ---", i);
-            let mut graph = UndirectedGraph::new();
+            let mut graph = DirectedGraph::new();
 
             for j in 1..i {
                 graph.insert_node(j, vec![]);
@@ -168,7 +142,7 @@ mod tests {
     fn test_edges() {
         for i in 0..500 {
             println!("--- case {} ---", i);
-            let mut graph = UndirectedGraph::new();
+            let mut graph = DirectedGraph::new();
 
             for j in 1..i {
                 graph.insert_node(j, vec![]);
@@ -191,14 +165,17 @@ mod tests {
                 assert_eq!(graph.len(), i - j - 1);
             }
 
+            // TODO: fix, this currently test non-existent nodes
             for j in 1..i / 2 {
+                println!("> {:?}", graph);
                 let adj = graph.get_adj(&j);
+                println!("{} -- {:?}", j, adj);
 
                 assert!(!adj.contains(&(i - j)));
                 assert_eq!(adj.len(), 0);
             }
 
-            let mut graph = UndirectedGraph::new();
+            let mut graph = DirectedGraph::new();
 
             graph.insert_node(i, vec![]);
 
@@ -227,13 +204,7 @@ mod tests {
                     assert!(adj.contains(&(j + 3)));
                     assert!(adj.contains(&(j + 7)));
 
-                    if j > 7 {
-                        assert_eq!(adj.len(), 5);
-                    } else if j > 3 {
-                        assert_eq!(adj.len(), 4);
-                    } else {
-                        assert_eq!(adj.len(), 3);
-                    }
+                    assert_eq!(adj.len(), 3);
                 }
 
                 for j in 1..i - 3 {
@@ -246,25 +217,17 @@ mod tests {
                     assert!(adj.contains(&i));
                     assert!(!adj.contains(&(j + 3)));
                     assert!(adj.contains(&(j + 7)));
-                    if j > 7 {
-                        assert_eq!(adj.len(), 3);
-                    } else {
-                        assert_eq!(adj.len(), 2);
-                    }
+                    assert_eq!(adj.len(), 2);
                 }
                 graph.remove_node(i);
 
                 for j in 1..i - 7 {
                     let adj = graph.get_adj(&j);
 
-                    assert!(!adj.contains(&i));
+                    assert!(adj.contains(&i));
                     assert!(!adj.contains(&(j + 3)));
                     assert!(adj.contains(&(j + 7)));
-                    if j > 7 {
-                        assert_eq!(adj.len(), 2);
-                    } else {
-                        assert_eq!(adj.len(), 1);
-                    }
+                    assert_eq!(adj.len(), 2);
                 }
 
                 for j in 1..i {
@@ -282,7 +245,7 @@ mod tests {
         for i in vec![0, 1, 2, 3] {
             println!("bfs test with {} layers", i);
 
-            let mut graph = UndirectedGraph::new();
+            let mut graph = DirectedGraph::new();
 
             let mut level = vec![];
             for m in 1..i + 1 {
@@ -303,10 +266,11 @@ mod tests {
 
     #[test]
     fn dfs_search() {
-        for i in vec![0, 1, 2, 3, 4, 5] {
+        for i in vec![0, 1, 2, 3] {
+            let i = i as i32;
             println!("dfs test with {} layers", i);
 
-            let mut graph = UndirectedGraph::new();
+            let mut graph = DirectedGraph::new();
 
             let mut level = vec![];
             for m in 1..i + 1 {
@@ -320,7 +284,30 @@ mod tests {
 
             let (roots, order, cyclic) = depth_first_search(graph.clone());
             println!("Graph: {:?}\nOrder: {:?}\nRoots: {:?}", graph, order, roots);
-            assert_eq!(cyclic, i > 1);
+            assert!(!cyclic);
+
+            println!("dfs test with {} layers (part 2)", i);
+
+            let mut graph = DirectedGraph::new();
+
+            fn inner(graph: &mut DirectedGraph<i32>, index: &mut i32, level: i32, max: i32) {
+                let local = *index;
+                graph.insert_node(local, vec![]);
+                *index += 1;
+                if level < max {
+                    graph.insert_edge(local, *index);
+                    inner(graph, index, level + 1, max);
+                    graph.insert_edge(local, *index);
+                    inner(graph, index, level + 1, max);
+                }
+            }
+
+            let mut index = 0;
+            inner(&mut graph, &mut index, 0, i);
+
+            let (roots, order, cyclic) = depth_first_search(graph.clone());
+            println!("Graph: {:?}\nOrder: {:?}\nRoots: {:?}", graph, order, roots);
+            assert!(!cyclic);
         }
     }
 

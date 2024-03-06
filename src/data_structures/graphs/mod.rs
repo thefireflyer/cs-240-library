@@ -1,9 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 
+use core::fmt;
 use std::collections::{HashMap, HashSet};
 
 use std::hash::Hash;
 
+///////////////////////////////////////////////////////////////////////////////
+
+pub mod directed_graph;
 pub mod undirected_graph;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -58,34 +62,81 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-pub fn depth_first_search<T: Graph>(graph: T) -> HashMap<T::Item, Option<T::Item>>
+pub fn depth_first_search<T: Graph>(
+    graph: T,
+) -> (Vec<<T as Graph>::Item>, Vec<<T as Graph>::Item>, bool)
 where
-    T::Item: Eq + Hash + Clone,
+    T: fmt::Debug,
+    T::Item: Eq + Hash + Clone + fmt::Debug,
 {
-    let mut known: HashMap<T::Item, Option<T::Item>> = HashMap::new();
+    let mut roots = vec![];
+    let mut order = vec![];
+    let mut cyclic = false;
+    let mut perm_mark: HashSet<T::Item> = HashSet::new();
+    let mut temp_mark: HashSet<T::Item> = HashSet::new();
+
+    println!();
+    println!(">> {:?}", graph);
 
     for origin in graph.get_all() {
-        if !known.contains_key(&origin) {
-            known.insert(origin.clone(), None);
-            dfs_visit(&graph, origin.clone(), &mut known);
+        if !perm_mark.contains(&origin) && !temp_mark.contains(&origin) {
+            roots.push(origin.clone());
+            dfs_visit(
+                &graph,
+                origin.clone(),
+                &mut perm_mark,
+                &mut temp_mark,
+                &mut cyclic,
+                0,
+                &mut order,
+            );
         }
     }
 
-    known
+    order.reverse();
+
+    (roots, order, cyclic)
 }
 
 //---------------------------------------------------------------------------//
 
-fn dfs_visit<T: Graph>(graph: &T, origin: T::Item, known: &mut HashMap<T::Item, Option<T::Item>>)
-where
-    T::Item: Eq + Hash + Clone,
+fn dfs_visit<T: Graph>(
+    graph: &T,
+    node: T::Item,
+    perm_mark: &mut HashSet<T::Item>,
+    temp_mark: &mut HashSet<T::Item>,
+    cyclic: &mut bool,
+    level: usize,
+    order: &mut Vec<<T as Graph>::Item>,
+) where
+    T: fmt::Debug,
+    T::Item: Eq + Hash + Clone + fmt::Debug,
 {
-    for node in graph.get_adj(&origin) {
-        if !known.contains_key(&node) {
-            known.insert(node.clone(), Some(origin.clone()));
-            dfs_visit(graph, node, known);
-        }
+    // source: https://en.wikipedia.org/wiki/Topological_sorting
+
+    for i in 0..level {
+        print!("    ");
     }
+    println!("> {:?}", node);
+
+    if perm_mark.contains(&node) {
+        return;
+    }
+
+    if temp_mark.contains(&node) {
+        *cyclic = true;
+        return;
+    }
+
+    temp_mark.insert(node.clone());
+
+    for node in graph.get_adj(&node) {
+        dfs_visit(graph, node, perm_mark, temp_mark, cyclic, level + 1, order);
+    }
+
+    temp_mark.remove(&node);
+    perm_mark.insert(node.clone());
+    order.push(node.clone());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
