@@ -11,6 +11,11 @@
 
 ## Organization
 
+- [Graphs](src/data_structures/graphs/mod.rs)
+    - [`UndirectedGraph`](src/data_structures/graphs/undirected_graph.rs)
+    - [`DirectedGraph`](src/data_structures/graphs/directed_graph.rs)
+    - [BFS](src/data_structures/graphs/mod.rs)
+    - [DFS](src/data_structures/graphs/mod.rs)
 - [Binary Heap](src/data_structures/binary_heap.rs)
 - [Hash Set](src/data_structures/sets/hashset.rs)
 - Hash Tables
