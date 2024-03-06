@@ -66,8 +66,9 @@ pub fn depth_first_search<T: Graph>(
     graph: T,
 ) -> (Vec<<T as Graph>::Item>, Vec<<T as Graph>::Item>, bool)
 where
-    T: fmt::Debug,
-    T::Item: Eq + Hash + Clone + fmt::Debug,
+    // T: fmt::Debug,
+    // T::Item: fmt::Debug,
+    T::Item: Eq + Hash + Clone,
 {
     let mut roots = vec![];
     let mut order = vec![];
@@ -75,8 +76,8 @@ where
     let mut perm_mark: HashSet<T::Item> = HashSet::new();
     let mut temp_mark: HashSet<T::Item> = HashSet::new();
 
-    println!();
-    println!(">> {:?}", graph);
+    // println!();
+    // println!(">> {:?}", graph);
 
     for origin in graph.get_all() {
         if !perm_mark.contains(&origin) && !temp_mark.contains(&origin) {
@@ -109,15 +110,16 @@ fn dfs_visit<T: Graph>(
     level: usize,
     order: &mut Vec<<T as Graph>::Item>,
 ) where
-    T: fmt::Debug,
-    T::Item: Eq + Hash + Clone + fmt::Debug,
+    // T: fmt::Debug,
+    // T::Item: fmt::Debug,
+    T::Item: Eq + Hash + Clone,
 {
     // source: https://en.wikipedia.org/wiki/Topological_sorting
 
-    for i in 0..level {
-        print!("    ");
-    }
-    println!("> {:?}", node);
+    // for i in 0..level {
+    //     print!("    ");
+    // }
+    // println!("> {:?}", node);
 
     if perm_mark.contains(&node) {
         return;
