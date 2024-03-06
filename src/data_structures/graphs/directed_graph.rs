@@ -6,7 +6,7 @@ use std::{
     hash::Hash,
 };
 
-use super::{Graph, GraphMut};
+use super::{undirected_graph::UndirectedGraph, Graph, GraphMut};
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -89,6 +89,19 @@ where
     }
 
     //-----------------------------------------------------------------------//
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+impl<T> From<UndirectedGraph<T>> for DirectedGraph<T>
+where
+    T: Ord + fmt::Debug + Hash + Clone,
+{
+    fn from(value: UndirectedGraph<T>) -> Self {
+        Self {
+            adj: value.get_inner(),
+        }
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
