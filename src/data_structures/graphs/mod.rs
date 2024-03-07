@@ -98,12 +98,12 @@ where
 /// The topological ordering will only be valid for acyclic forests
 pub fn depth_first_search<T: Graph>(
     graph: T,
-) -> (Vec<<T as Graph>::Item>, Vec<<T as Graph>::Item>, bool)
+) -> (HashSet<<T as Graph>::Item>, Vec<<T as Graph>::Item>, bool)
 where
     T::Item: Eq + Hash + Clone,
 {
     // we'll initialize all of our tracking variables
-    let mut roots = vec![];
+    let mut roots = HashSet::new();
     let mut order = vec![];
 
     // we're assuming the graph acyclic to begin with because an empty graph
@@ -119,7 +119,7 @@ where
         // if its completely new, let's search it's sub-tree
         if !perm_mark.contains(&origin) && !temp_mark.contains(&origin) {
             // updates roots
-            roots.push(origin.clone());
+            roots.insert(origin.clone());
 
             // recursively explore the full reachable sub-tree from this node
             dfs_visit(
@@ -130,6 +130,7 @@ where
                 &mut cyclic,
                 0,
                 &mut order,
+                &mut roots,
             );
         }
     }
@@ -155,6 +156,7 @@ fn dfs_visit<T: Graph>(
     cyclic: &mut bool,
     level: usize,
     order: &mut Vec<<T as Graph>::Item>,
+    roots: &mut HashSet<<T as Graph>::Item>,
 ) where
     T::Item: Eq + Hash + Clone,
 {
@@ -163,12 +165,14 @@ fn dfs_visit<T: Graph>(
 
     // check if the current node is a completed sub-tree
     if perm_mark.contains(&node) {
+        roots.remove(&node);
         // if so, we can just ignore it
         return;
     }
 
     // check if the node is in the current sub-tree
     if temp_mark.contains(&node) {
+        roots.remove(&node);
         // if so, that means we've found a cycle!
         *cyclic = true;
         // it also means we're already in the process of looking at the node
@@ -182,7 +186,16 @@ fn dfs_visit<T: Graph>(
 
     // we'll iterate over every neighbor node and recursively search each of them
     for node in graph.get_adj(&node) {
-        dfs_visit(graph, node, perm_mark, temp_mark, cyclic, level + 1, order);
+        dfs_visit(
+            graph,
+            node,
+            perm_mark,
+            temp_mark,
+            cyclic,
+            level + 1,
+            order,
+            roots,
+        );
     }
 
     // we've iterated through all the neighbor nodes which means we're done
