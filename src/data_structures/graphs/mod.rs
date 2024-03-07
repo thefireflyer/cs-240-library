@@ -19,6 +19,8 @@ pub trait Graph {
     fn get_all(&self) -> Vec<Self::Item>;
     fn get_adj(&self, node: &Self::Item) -> HashSet<Self::Item>;
 
+    fn contains(&self, item: &Self::Item) -> bool;
+
     fn len(&self) -> usize;
 }
 

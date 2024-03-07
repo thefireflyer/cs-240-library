@@ -55,6 +55,10 @@ where
     fn len(&self) -> usize {
         self.adj.keys().len()
     }
+
+    fn contains(&self, item: &Self::Item) -> bool {
+        self.adj.contains_key(item)
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
