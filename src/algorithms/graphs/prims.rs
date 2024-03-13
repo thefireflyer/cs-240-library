@@ -8,10 +8,25 @@ use crate::data_structures::graphs::{
 
 ///////////////////////////////////////////////////////////////////////////////
 
+/// Returns the minimum spanning tree of the given graph reachable from the
+/// provided starting node.
+///
+/// Inputs:
+/// - `graph: &T` The graph to simplify
+/// - `origin: T::Node` The node to start building from
+///
+/// Outputs:
+/// - `WeightedGraph<<T>::Node, <T>::Weight>` The minimum spanning tree
+/// - `T::Weight` The total weight of the minium spanning tree
+///
+/// Side-effects: N/A
+///
 pub fn prims<T: IWeightedGraph>(
     graph: &T,
     origin: T::Node,
 ) -> (WeightedGraph<<T>::Node, <T>::Weight>, T::Weight) {
+    // explained in depth in pseudo-code
+
     let mut res = WeightedGraph::new();
 
     res.insert_node(origin.clone());

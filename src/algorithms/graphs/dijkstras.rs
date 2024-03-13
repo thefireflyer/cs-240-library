@@ -6,24 +6,60 @@ use crate::data_structures::graphs::IWeightedGraph;
 
 ///////////////////////////////////////////////////////////////////////////////
 
+/// Returns a shortest path from `origin` to `target` in `graph` if it exists
+///
+/// Inputs:
+/// - `graph: &T` The graph to search through
+/// - `origin: &T::Node` The node to start from
+/// - `target: &T::Node` The node to try and route to
+///
+/// Output:
+/// - If there exists a path from origin to target in graph
+///     - `Some(Vec<T::Node>)` A shortest path from origin to target
+/// - Else
+///     - `None` No valid path found
+///
+/// Side-effects: N/A
+///
 pub fn dijkstras<T: IWeightedGraph>(
     graph: &T,
     origin: &T::Node,
     target: &T::Node,
 ) -> Option<Vec<T::Node>> {
+    // explained in depth in pseudo-code
+
+    // Maps: Node -> the shortest known distance from origin
     let mut dist: HashMap<T::Node, T::Weight> = HashMap::new();
+
+    // Maps: Node -> the node immediately before it in the known shortest path
     let mut prev: HashMap<T::Node, T::Node> = HashMap::new();
 
+    // Set of nodes we've already visited
     let mut known: HashSet<T::Node> = HashSet::new();
 
+    // It doesn't take any distance to get from origin to origin
     dist.insert(origin.clone(), 0.into());
 
+    // Loop until we find the target
     while !known.contains(target) {
+        // Find the shortest known edge
+        // If it doesn't exist, we've exhausted our graph and will immediately
+        // return.
         if let Some((node, weight)) = dist.clone().into_iter().min_by_key(|(_, w)| w.clone()) {
+            // Remove the smallest edge
             dist.remove(&node);
+
+            // Check if we've already visited this edge's endpoint
             if !known.contains(&node) {
+                // Remember new node
                 known.insert(node.clone());
 
+                // This is very messy, but is just the relax operation
+                // For every adjacent edge
+                // - If it's endpoint is completely new or the previous
+                //   shortest path is longer than our new one
+                //      - Replace the distance with this node's shortest path
+                //          length + the weight of this edge.
                 for (adj, edge_weight) in graph.get_adj_weighted(&node) {
                     match (dist.get_mut(&adj), prev.get_mut(&adj)) {
                         (Some(node_weight), Some(adj_pred))
@@ -44,6 +80,8 @@ pub fn dijkstras<T: IWeightedGraph>(
             return None;
         }
     }
+
+    // messy backtracking code
 
     let mut res = vec![target.clone()];
 
