@@ -32,8 +32,6 @@ pub fn prims<T: IWeightedGraph>(
             res.insert_edge_weighted(from.clone(), to.clone(), weight.clone());
             total = total + weight;
 
-            println!("-- {:?} : {:?}", total, res);
-
             for edge in graph.get_adj_weighted(&to) {
                 frontier.insert((to.clone(), edge));
             }
