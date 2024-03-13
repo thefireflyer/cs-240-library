@@ -178,7 +178,7 @@ where
     pub fn iter(&self) -> Iter<T> {
         Iter {
             front: self.front,
-            back: self.back,
+            _back: self.back,
             len: self.len,
             _ghost: PhantomData,
         }
@@ -187,45 +187,37 @@ where
     pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut {
             front: self.front,
-            back: self.back,
+            _back: self.back,
             len: self.len,
             _ghost: PhantomData,
         }
     }
 
-    // pub fn cursor_mut(&mut self) -> CursorMut<T> {
-    //     CursorMut {
-    //         list: self,
-    //         cur: None,
-    //         index: None,
-    //     }
-    // }
-
     //-----------------------------------------------------------------------//
 
-    fn get(&self, index: usize) -> Cursor<T> {
+    fn _get(&self, _index: usize) -> Cursor<T> {
         todo!()
     }
 
     //-----------------------------------------------------------------------//
 
-    pub fn read<'a>(&'a self, index: usize) -> Option<&'a T> {
+    pub fn read<'a>(&'a self, _index: usize) -> Option<&'a T> {
         todo!()
     }
 
     //-----------------------------------------------------------------------//
 
-    pub fn insert(&mut self, index: usize, value: T) -> Option<()> {
+    pub fn insert(&mut self, _index: usize, _value: T) -> Option<()> {
         todo!()
     }
 
-    pub fn delete(&mut self, index: usize) -> Option<()> {
+    pub fn delete(&mut self, _index: usize) -> Option<()> {
         todo!()
     }
 
     //-----------------------------------------------------------------------//
 
-    pub fn search(&self, value: T) -> Option<usize> {
+    pub fn search(&self, _value: T) -> Option<usize> {
         todo!()
     }
 
@@ -254,7 +246,7 @@ where
     T: Ord + std::fmt::Debug,
 {
     front: Cursor<T>,
-    back: Cursor<T>,
+    _back: Cursor<T>,
     len: usize,
     _ghost: PhantomData<&'a T>,
 }
@@ -291,7 +283,7 @@ where
     T: Ord + std::fmt::Debug,
 {
     front: Cursor<T>,
-    back: Cursor<T>,
+    _back: Cursor<T>,
     len: usize,
     _ghost: PhantomData<&'a mut T>,
 }

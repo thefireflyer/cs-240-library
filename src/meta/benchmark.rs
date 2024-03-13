@@ -1,11 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::BTreeMap,
     fmt::Display,
     fs,
-    hash::Hash,
-    time::{Duration, SystemTime, SystemTimeError},
+    time::{Duration, SystemTime},
 };
 
 use serde::{Deserialize, Serialize};
@@ -37,8 +36,9 @@ pub struct Report {
 //---------------------------------------------------------------------------//
 
 impl Report {
-    fn save(&self) {
-        fs::create_dir("./.benchmarks");
+    fn _save(&self) {
+        let _ = fs::create_dir("./.benchmarks");
+
         fs::write(
             format!("./.benchmarks/{}.v{}.yaml", self.label, self.version),
             serde_yaml::to_string(self).unwrap(),
@@ -46,7 +46,7 @@ impl Report {
         .unwrap();
     }
 
-    fn compare(&self) {
+    fn _compare(&self) {
         match fs::read_to_string(format!(
             "./.benchmarks/{}.v{}.yaml",
             self.label,
@@ -119,7 +119,7 @@ Standard deviation: {:?}",
 
 ///////////////////////////////////////////////////////////////////////////////
 
-fn benchmark<T: Fn() -> Result<String, String>>(
+fn _benchmark<T: Fn() -> Result<String, String>>(
     label: &str,
     version: u32,
     op: T,
@@ -129,7 +129,7 @@ fn benchmark<T: Fn() -> Result<String, String>>(
     let mut logs = Vec::new();
     let mut passed = 0;
 
-    for i in 1..steps + 1 {
+    for _ in 1..steps + 1 {
         let time = SystemTime::now();
 
         let res = op();

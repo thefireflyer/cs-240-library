@@ -359,7 +359,7 @@ where
         let mut res = Vec::with_capacity(self.len());
 
         // repeatedly move the next smallest item over to the new vector
-        for i in 0..self.len() {
+        for _ in 0..self.len() {
             res.push(self.extract_min());
         }
 
@@ -390,8 +390,7 @@ mod tests {
 
     //-----------------------------------------------------------------------//
 
-    use core::time;
-    use std::time::{Duration, SystemTime};
+    use std::time::SystemTime;
 
     use super::*;
 
@@ -495,7 +494,7 @@ mod tests {
     fn sorting() {
         for i in 0..1000 {
             let mut arr = Vec::with_capacity(i as usize);
-            for i in 0..i {
+            for _ in 0..i {
                 arr.push(
                     SystemTime::now()
                         .duration_since(SystemTime::UNIX_EPOCH)

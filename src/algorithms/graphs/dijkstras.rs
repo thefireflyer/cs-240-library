@@ -2,78 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::{
-    algorithms::graphs::dfs,
-    data_structures::{
-        binary_heap::BinaryHeap,
-        graphs::{IDefiniteGraph, IWeightedGraph},
-    },
-};
-
-///////////////////////////////////////////////////////////////////////////////
-
-pub fn dag<T: IDefiniteGraph + IWeightedGraph + Clone>(
-    graph: T,
-    origin: &T::Node,
-    target: &T::Node,
-) -> Option<Vec<T::Node>> {
-    let (_, order, cyclic) = dfs::depth_first_search(graph.clone());
-
-    assert!(!cyclic);
-
-    let mut weights: HashMap<T::Node, T::Weight> = Default::default();
-    let mut preds: HashMap<T::Node, T::Node> = Default::default();
-
-    let mut found = false;
-
-    for node in order {
-        if &node == origin {
-            found = true;
-            weights.insert(node.clone(), 0.into());
-
-            for (adj, weight) in graph.get_adj_weighted(&node) {
-                weights.insert(adj.clone(), weight);
-                preds.insert(adj, node.clone());
-            }
-        } else if found {
-            let cur_weight = weights.get(&node).unwrap().clone();
-
-            for (adj, weight) in graph.get_adj_weighted(&node) {
-                match (weights.get_mut(&adj), preds.get_mut(&adj)) {
-                    (Some(adj_weight), Some(adj_pred))
-                        if *adj_weight > weight.clone() + cur_weight.clone() =>
-                    {
-                        *adj_weight = weight + cur_weight.clone();
-                        *adj_pred = node.clone();
-                    }
-                    (None, None) => {
-                        weights.insert(adj.clone(), weight);
-                        preds.insert(adj, node.clone());
-                    }
-                    _ => {}
-                }
-            }
-        } else if node == *target {
-            return None;
-        }
-    }
-
-    if !found {
-        return None;
-    }
-
-    let mut res = vec![target.clone()];
-
-    let mut cur = preds.get(target);
-    while let Some(curr) = cur {
-        res.push(curr.clone());
-        cur = preds.get(curr);
-    }
-
-    res.reverse();
-
-    Some(res)
-}
+use crate::data_structures::graphs::IWeightedGraph;
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -90,23 +19,25 @@ pub fn dijkstras<T: IWeightedGraph>(
     dist.insert(origin.clone(), 0.into());
 
     while !known.contains(target) {
-        if let Some((node, weight)) = dist.clone().iter().min_by(|(_, a), (_, b)| a.cmp(b)) {
-            dist.remove(node);
-            known.insert(node.clone());
+        if let Some((node, weight)) = dist.clone().into_iter().min_by_key(|(_, w)| w.clone()) {
+            dist.remove(&node);
+            if !known.contains(&node) {
+                known.insert(node.clone());
 
-            for (adj, adj_weight) in graph.get_adj_weighted(node) {
-                match (dist.get_mut(&adj), prev.get_mut(&adj)) {
-                    (Some(adj_weight), Some(adj_pred))
-                        if *adj_weight > adj_weight.clone() + weight.clone() =>
-                    {
-                        *adj_weight = adj_weight.clone() + weight.clone();
-                        *adj_pred = node.clone();
+                for (adj, edge_weight) in graph.get_adj_weighted(&node) {
+                    match (dist.get_mut(&adj), prev.get_mut(&adj)) {
+                        (Some(node_weight), Some(adj_pred))
+                            if *node_weight > weight.clone() + edge_weight.clone() =>
+                        {
+                            *node_weight = weight.clone() + edge_weight.clone();
+                            *adj_pred = node.clone();
+                        }
+                        (None, None) if adj != *origin => {
+                            dist.insert(adj.clone(), weight.clone() + edge_weight);
+                            prev.insert(adj, node.clone());
+                        }
+                        _ => {}
                     }
-                    (None, None) => {
-                        dist.insert(adj.clone(), adj_weight);
-                        prev.insert(adj, node.clone());
-                    }
-                    _ => {}
                 }
             }
         } else {
@@ -134,51 +65,56 @@ mod tests {
     use crate::{
         algorithms::graphs::dijkstras::dijkstras,
         data_structures::graphs::{
-            self, weighted_graph::WeightedGraph, IGraphEdgeWeightedMut, IGraphMut,
+            weighted_graph::WeightedGraph, IGraphEdgeWeightedMut, IGraphMut,
         },
     };
 
-    use super::dag;
-
     #[test]
-    fn test() {
-        for i in 0..20 {
-            println!("=== Case {} ===\n", i);
+    fn test_dijkstras() {
+        let mut graph = WeightedGraph::new();
+        // https://www.youtube.com/watch?v=EFg3u_E6eHU
 
-            let mut graph = WeightedGraph::new();
+        graph.insert_node("A");
+        graph.insert_node("B");
+        graph.insert_node("C");
+        graph.insert_node("D");
+        graph.insert_node("E");
+        graph.insert_node("F");
+        graph.insert_node("G");
 
-            for n in 0..i {
-                for m in 0..n {
-                    graph.insert_node(n * n + m);
+        graph.insert_edge_weighted("A", "C", 3);
+        graph.insert_edge_weighted("A", "F", 2);
 
-                    for b in 0..n - 1 {
-                        graph.insert_edge_weighted((n - 1) * (n - 1) + b, n * n + m, b);
-                    }
-                }
-            }
+        graph.insert_edge_weighted("C", "A", 3);
+        graph.insert_edge_weighted("C", "F", 2);
+        graph.insert_edge_weighted("C", "E", 1);
+        graph.insert_edge_weighted("C", "D", 4);
 
-            graphs::fmt(graph.clone());
+        graph.insert_edge_weighted("F", "A", 2);
+        graph.insert_edge_weighted("F", "C", 2);
+        graph.insert_edge_weighted("F", "E", 3);
+        graph.insert_edge_weighted("F", "B", 6);
+        graph.insert_edge_weighted("F", "G", 5);
 
-            let path = dag(graph.clone(), &1, &((i - 1) * (i - 1)));
+        graph.insert_edge_weighted("E", "C", 1);
+        graph.insert_edge_weighted("E", "F", 3);
+        graph.insert_edge_weighted("E", "B", 2);
 
-            println!(
-                "--- DAG pathfinder\nOrigin: {:?}\nTarget: {:?}\nPath: {:?}\n---\n",
-                1,
-                ((i - 1) * (i - 1)),
-                path
-            );
+        graph.insert_edge_weighted("D", "C", 4);
+        graph.insert_edge_weighted("D", "B", 1);
 
-            let path = dijkstras(&graph, &1, &((i - 1) * (i - 1)));
+        graph.insert_edge_weighted("B", "D", 1);
+        graph.insert_edge_weighted("B", "E", 2);
+        graph.insert_edge_weighted("B", "F", 6);
+        graph.insert_edge_weighted("B", "G", 2);
 
-            println!(
-                "--- Dijkstras\nOrigin: {:?}\nTarget: {:?}\nPath: {:?}\n---\n",
-                1,
-                ((i - 1) * (i - 1)),
-                path
-            );
+        graph.insert_edge_weighted("G", "F", 5);
+        graph.insert_edge_weighted("G", "B", 2);
 
-            println!("===");
-        }
+        let path = dijkstras(&graph, &"A", &"B");
+        println!("{:?}", path);
+
+        assert_eq!(path, Some(vec!["A", "C", "E", "B"]));
     }
 }
 

@@ -12,10 +12,13 @@
 ## Organization
 
 - [Graphs](src/data_structures/graphs/mod.rs)
+    - [`WeightedGraph`](src/data_structures/graphs/weighted_graph.rs)
+    - [Dijkstra's Algorithm](src/algorithms/graphs/dijkstras.rs)
+    - [Prim's Algorithm](src/algorithms/graphs/prims.rs)
     - [`UndirectedGraph`](src/data_structures/graphs/undirected_graph.rs)
     - [`DirectedGraph`](src/data_structures/graphs/directed_graph.rs)
-    - [BFS](src/data_structures/graphs/mod.rs)
-    - [DFS](src/data_structures/graphs/mod.rs)
+    - [BFS](src/algorithms/graphs/bfs.rs)
+    - [DFS](src/algorithms/graphs/dfs.rs)
 - [Binary Heap](src/data_structures/binary_heap.rs)
 - [Hash Set](src/data_structures/sets/hashset.rs)
 - Hash Tables

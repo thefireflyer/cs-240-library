@@ -4,7 +4,7 @@ use crate::data_structures::graphs::IWeightedGraph;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-pub fn astar<T: IWeightedGraph>(graph: &T) -> Vec<T::Node> {
+pub fn astar<T: IWeightedGraph>(_graph: &T) -> Vec<T::Node> {
     todo!()
 }
 

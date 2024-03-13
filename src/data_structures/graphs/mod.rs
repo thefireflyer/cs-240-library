@@ -1,12 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 use core::fmt;
-use std::{
-    collections::HashSet,
-    fmt::{Debug, Display},
-    hash::Hash,
-    ops::Add,
-};
+use std::{collections::HashSet, fmt::Debug, hash::Hash, ops::Add};
 
 use crate::algorithms::graphs::dfs;
 

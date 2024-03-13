@@ -3,7 +3,6 @@
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
-use crate::algorithms::graphs;
 use crate::data_structures::graphs::{IDefiniteGraph, IGraph};
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -202,9 +201,9 @@ fn dfs_visit<T: IGraph>(
     // children, this must be the next item in topological order.
     // that is, if our children depend on us, then we need to go next to make
     // sure all their dependencies are met
-    // (this is actually reverse topo order because its faster to use constant
-    // time push and then linear time reverse then linear time prepend on each
-    // item, for O(n^2) total time)
+    // (this is actually reverse topological order because its faster to use
+    // constant time push and then linear time reverse then linear time prepend
+    // on each item, for O(n^2) total time)
     order.push(node.clone());
 }
 

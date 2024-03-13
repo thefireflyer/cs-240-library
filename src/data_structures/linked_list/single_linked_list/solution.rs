@@ -109,12 +109,10 @@ where
     //-----------------------------------------------------------------------//
 
     pub fn push(&mut self, data: T) {
-        unsafe {
-            self.head = Box::into_raw(Box::new(Node {
-                data,
-                next: self.head,
-            }));
-        }
+        self.head = Box::into_raw(Box::new(Node {
+            data,
+            next: self.head,
+        }));
     }
 
     pub fn pop(&mut self) -> Option<T> {
