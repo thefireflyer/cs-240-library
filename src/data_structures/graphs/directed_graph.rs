@@ -6,7 +6,7 @@ use std::{
     hash::Hash,
 };
 
-use super::{undirected_graph::UndirectedGraph, Graph, GraphMut};
+use super::{undirected_graph::UndirectedGraph, IDefiniteGraph, IGraph, IGraphEdgeMut, IGraphMut};
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -38,55 +38,69 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> Graph for DirectedGraph<T>
+impl<T> IGraph for DirectedGraph<T>
 where
-    T: Ord + fmt::Debug + Hash + Clone,
+    T: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
 {
-    type Item = T;
+    type Node = T;
 
-    fn get_all(&self) -> Vec<Self::Item> {
-        self.adj.keys().cloned().collect()
-    }
-
-    fn get_adj(&self, node: &Self::Item) -> HashSet<Self::Item> {
+    fn get_adj(&self, node: &Self::Node) -> HashSet<Self::Node> {
         self.adj.get(&node).cloned().unwrap_or_default()
     }
 
-    fn len(&self) -> usize {
-        self.adj.keys().len()
-    }
-
-    fn contains(&self, item: &Self::Item) -> bool {
+    fn contains(&self, item: &Self::Node) -> bool {
         self.adj.contains_key(item)
     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> GraphMut for DirectedGraph<T>
+impl<T> IDefiniteGraph for DirectedGraph<T>
 where
-    T: Ord + fmt::Debug + Hash + Clone,
+    T: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
+{
+    fn get_all(&self) -> Vec<Self::Node> {
+        self.adj.keys().cloned().collect()
+    }
+
+    fn len(&self) -> usize {
+        self.adj.keys().len()
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+impl<T> IGraphMut for DirectedGraph<T>
+where
+    T: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
 {
     //-----------------------------------------------------------------------//
 
-    fn insert_node(&mut self, node: Self::Item, adj: Vec<Self::Item>) {
-        self.adj
-            .insert(node.clone(), HashSet::from_iter(adj.into_iter()));
+    fn insert_node(&mut self, node: Self::Node) {
+        self.adj.insert(node.clone(), HashSet::new());
     }
 
-    fn remove_node(&mut self, node: Self::Item) {
+    fn remove_node(&mut self, node: Self::Node) {
         self.adj.remove(&node);
     }
 
     //-----------------------------------------------------------------------//
+}
 
-    fn insert_edge(&mut self, from: Self::Item, to: Self::Item) {
+///////////////////////////////////////////////////////////////////////////////
+
+impl<T> IGraphEdgeMut for DirectedGraph<T>
+where
+    T: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
+{
+    //-----------------------------------------------------------------------//
+    fn insert_edge(&mut self, from: Self::Node, to: Self::Node) {
         if let Some(links) = self.adj.get_mut(&from) {
             links.insert(to.clone());
         }
     }
 
-    fn remove_edge(&mut self, from: Self::Item, to: Self::Item) {
+    fn remove_edge(&mut self, from: Self::Node, to: Self::Node) {
         if let Some(links) = self.adj.get_mut(&from) {
             links.remove(&to);
         }
@@ -114,7 +128,7 @@ where
 mod tests {
     //-----------------------------------------------------------------------//
 
-    use crate::data_structures::graphs::{breadth_first_search, depth_first_search};
+    use crate::algorithms::graphs::{bfs::breadth_first_search, dfs::depth_first_search};
 
     use super::*;
 
@@ -127,7 +141,7 @@ mod tests {
             let mut graph = DirectedGraph::new();
 
             for j in 1..i {
-                graph.insert_node(j, vec![]);
+                graph.insert_node(j);
                 assert_eq!(graph.len(), j);
             }
 
@@ -136,11 +150,12 @@ mod tests {
                 assert_eq!(graph.len(), i - j - 1);
             }
 
-            graph.insert_node(i, vec![]);
+            graph.insert_node(i);
             assert_eq!(graph.len(), 1);
 
             for j in 1..i {
-                graph.insert_node(j, vec![i]);
+                graph.insert_node(j);
+                graph.insert_edge(j, i);
                 assert_eq!(graph.len(), j + 1);
             }
 
@@ -162,7 +177,7 @@ mod tests {
             let mut graph = DirectedGraph::new();
 
             for j in 1..i {
-                graph.insert_node(j, vec![]);
+                graph.insert_node(j);
                 assert_eq!(graph.len(), j);
             }
 
@@ -194,12 +209,13 @@ mod tests {
 
             let mut graph = DirectedGraph::new();
 
-            graph.insert_node(i, vec![]);
+            graph.insert_node(i);
 
             assert_eq!(graph.len(), 1);
 
             for j in 1..i {
-                graph.insert_node(j, vec![i]);
+                graph.insert_node(j);
+                graph.insert_edge(j, i);
                 assert_eq!(graph.len(), j + 1);
             }
 
@@ -268,7 +284,10 @@ mod tests {
             for m in 1..i + 1 {
                 let mut new_level = vec![];
                 for n in 0..m {
-                    graph.insert_node(m * m + n, level.clone());
+                    graph.insert_node(m * m + n);
+                    for node in level.clone() {
+                        graph.insert_edge(m * m + n, node);
+                    }
                     new_level.push(m * m + n);
                 }
                 level = new_level;
@@ -293,7 +312,10 @@ mod tests {
             for m in 1..i + 1 {
                 let mut new_level = vec![];
                 for n in 0..m {
-                    graph.insert_node(m * m + n, level.clone());
+                    graph.insert_node(m * m + n);
+                    for node in level.clone() {
+                        graph.insert_edge(m * m + n, node);
+                    }
                     new_level.push(m * m + n);
                 }
                 level = new_level;
@@ -309,7 +331,7 @@ mod tests {
 
             fn inner(graph: &mut DirectedGraph<i32>, index: &mut i32, level: i32, max: i32) {
                 let local = *index;
-                graph.insert_node(local, vec![]);
+                graph.insert_node(local);
                 *index += 1;
                 if level < max {
                     graph.insert_edge(local, *index);

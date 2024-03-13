@@ -4,26 +4,29 @@ use std::{
     collections::{HashMap, HashSet},
     fmt::{self, Debug},
     hash::Hash,
+    ops::Add,
 };
 
-use super::{IDefiniteGraph, IGraph, IGraphEdgeMut, IGraphMut};
+use super::{IDefiniteGraph, IGraph, IGraphEdgeWeightedMut, IGraphMut, IWeightedGraph};
 
 ///////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct UndirectedGraph<T>
+pub struct WeightedGraph<T, W>
 where
     T: Ord + fmt::Debug + Hash + Clone,
+    W: Ord + fmt::Debug + Hash + Clone,
 {
     // Map (node -> set of adj nodes)
-    adj: HashMap<T, HashSet<T>>,
+    adj: HashMap<T, HashSet<(T, W)>>,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> UndirectedGraph<T>
+impl<T, W> WeightedGraph<T, W>
 where
     T: Ord + fmt::Debug + Hash + Clone,
+    W: Ord + fmt::Debug + Hash + Clone,
 {
     //-----------------------------------------------------------------------//
 
@@ -34,38 +37,25 @@ where
     }
 
     //-----------------------------------------------------------------------//
-
-    fn inner_insert_edge(&mut self, from: &T, to: &T) {
-        if let Some(links) = self.adj.get_mut(from) {
-            links.insert(to.clone());
-        }
-    }
-
-    fn inner_remove_edge(&mut self, from: &T, to: &T) {
-        if let Some(links) = self.adj.get_mut(from) {
-            links.remove(to);
-        }
-    }
-
-    //-----------------------------------------------------------------------//
-
-    pub fn get_inner(self) -> HashMap<T, HashSet<T>> {
-        self.adj
-    }
-
-    //-----------------------------------------------------------------------//
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> IGraph for UndirectedGraph<T>
+impl<T, W> IGraph for WeightedGraph<T, W>
 where
     T: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
+    W: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
 {
     type Node = T;
 
     fn get_adj(&self, node: &Self::Node) -> HashSet<Self::Node> {
-        self.adj.get(&node).cloned().unwrap_or_default()
+        self.adj
+            .get(&node)
+            .cloned()
+            .unwrap_or_default()
+            .into_iter()
+            .map(|(n, _)| n)
+            .collect()
     }
 
     fn contains(&self, item: &Self::Node) -> bool {
@@ -75,13 +65,29 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> IDefiniteGraph for UndirectedGraph<T>
+impl<T, W> IWeightedGraph for WeightedGraph<T, W>
 where
     T: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
+    W: Ord + fmt::Debug + Hash + Clone + Add<W, Output = W> + From<i32> + Default + fmt::Debug,
+{
+    type Weight = W;
+
+    fn get_adj_weighted(&self, node: &Self::Node) -> HashSet<(Self::Node, Self::Weight)> {
+        self.adj.get(&node).cloned().unwrap_or_default()
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+impl<T, W> IDefiniteGraph for WeightedGraph<T, W>
+where
+    T: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
+    W: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
 {
     fn get_all(&self) -> Vec<Self::Node> {
         self.adj.keys().cloned().collect()
     }
+
     fn len(&self) -> usize {
         self.adj.keys().len()
     }
@@ -89,9 +95,10 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> IGraphMut for UndirectedGraph<T>
+impl<T, W> IGraphMut for WeightedGraph<T, W>
 where
     T: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
+    W: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
 {
     //-----------------------------------------------------------------------//
 
@@ -100,14 +107,6 @@ where
     }
 
     fn remove_node(&mut self, node: Self::Node) {
-        let adj = self.get_adj(&node);
-
-        for neighbor in &adj {
-            if let Some(links) = self.adj.get_mut(neighbor) {
-                links.remove(&node);
-            }
-        }
-
         self.adj.remove(&node);
     }
 
@@ -116,20 +115,22 @@ where
 
 ///////////////////////////////////////////////////////////////////////////////
 
-impl<T> IGraphEdgeMut for UndirectedGraph<T>
+impl<T, W> IGraphEdgeWeightedMut for WeightedGraph<T, W>
 where
     T: Ord + fmt::Debug + Hash + Clone + Default + fmt::Debug,
+    W: Ord + fmt::Debug + Hash + Clone + Add<W, Output = W> + From<i32> + Default + fmt::Debug,
 {
     //-----------------------------------------------------------------------//
-
-    fn insert_edge(&mut self, left: Self::Node, right: Self::Node) {
-        self.inner_insert_edge(&left, &right);
-        self.inner_insert_edge(&right, &left);
+    fn insert_edge_weighted(&mut self, from: Self::Node, to: Self::Node, weight: Self::Weight) {
+        if let Some(links) = self.adj.get_mut(&from) {
+            links.insert((to.clone(), weight));
+        }
     }
 
-    fn remove_edge(&mut self, left: Self::Node, right: Self::Node) {
-        self.inner_remove_edge(&left, &right);
-        self.inner_remove_edge(&right, &left);
+    fn remove_edge_weighted(&mut self, from: Self::Node, to: Self::Node, weight: Self::Weight) {
+        if let Some(links) = self.adj.get_mut(&from) {
+            links.remove(&(to, weight));
+        }
     }
 
     //-----------------------------------------------------------------------//
@@ -141,8 +142,6 @@ where
 mod tests {
     //-----------------------------------------------------------------------//
 
-    use crate::algorithms::graphs::{bfs::breadth_first_search, dfs::depth_first_search};
-
     use super::*;
 
     //-----------------------------------------------------------------------//
@@ -151,7 +150,7 @@ mod tests {
     fn construction() {
         for i in 0..500 {
             println!("--- case {} ---", i);
-            let mut graph = UndirectedGraph::new();
+            let mut graph = WeightedGraph::new();
 
             for j in 1..i {
                 graph.insert_node(j);
@@ -168,7 +167,7 @@ mod tests {
 
             for j in 1..i {
                 graph.insert_node(j);
-                graph.insert_edge(j, i);
+                graph.insert_edge_weighted(j, i, 1);
                 assert_eq!(graph.len(), j + 1);
             }
 
@@ -187,7 +186,7 @@ mod tests {
     fn test_edges() {
         for i in 0..500 {
             println!("--- case {} ---", i);
-            let mut graph = UndirectedGraph::new();
+            let mut graph = WeightedGraph::new();
 
             for j in 1..i {
                 graph.insert_node(j);
@@ -195,7 +194,7 @@ mod tests {
             }
 
             for j in 1..i {
-                graph.insert_edge(j, i - j);
+                graph.insert_edge_weighted(j, i - j, 2);
             }
 
             for j in 1..i {
@@ -210,14 +209,17 @@ mod tests {
                 assert_eq!(graph.len(), i - j - 1);
             }
 
+            // TODO: fix, this currently test non-existent nodes
             for j in 1..i / 2 {
+                println!("> {:?}", graph);
                 let adj = graph.get_adj(&j);
+                println!("{} -- {:?}", j, adj);
 
                 assert!(!adj.contains(&(i - j)));
                 assert_eq!(adj.len(), 0);
             }
 
-            let mut graph = UndirectedGraph::new();
+            let mut graph = WeightedGraph::new();
 
             graph.insert_node(i);
 
@@ -225,17 +227,17 @@ mod tests {
 
             for j in 1..i {
                 graph.insert_node(j);
-                graph.insert_edge(j, i);
+                graph.insert_edge_weighted(j, i, 1);
                 assert_eq!(graph.len(), j + 1);
             }
 
             if i > 7 {
                 for j in 1..i - 3 {
-                    graph.insert_edge(j, j + 3);
+                    graph.insert_edge_weighted(j, j + 3, 1);
                 }
 
                 for j in 1..i - 7 {
-                    graph.insert_edge(j, j + 7);
+                    graph.insert_edge_weighted(j, j + 7, 1);
                 }
 
                 for j in 1..i - 7 {
@@ -247,17 +249,11 @@ mod tests {
                     assert!(adj.contains(&(j + 3)));
                     assert!(adj.contains(&(j + 7)));
 
-                    if j > 7 {
-                        assert_eq!(adj.len(), 5);
-                    } else if j > 3 {
-                        assert_eq!(adj.len(), 4);
-                    } else {
-                        assert_eq!(adj.len(), 3);
-                    }
+                    assert_eq!(adj.len(), 3);
                 }
 
                 for j in 1..i - 3 {
-                    graph.remove_edge(j, j + 3);
+                    graph.remove_edge_weighted(j, j + 3, 1);
                 }
 
                 for j in 1..i - 7 {
@@ -266,25 +262,17 @@ mod tests {
                     assert!(adj.contains(&i));
                     assert!(!adj.contains(&(j + 3)));
                     assert!(adj.contains(&(j + 7)));
-                    if j > 7 {
-                        assert_eq!(adj.len(), 3);
-                    } else {
-                        assert_eq!(adj.len(), 2);
-                    }
+                    assert_eq!(adj.len(), 2);
                 }
                 graph.remove_node(i);
 
                 for j in 1..i - 7 {
                     let adj = graph.get_adj(&j);
 
-                    assert!(!adj.contains(&i));
+                    assert!(adj.contains(&i));
                     assert!(!adj.contains(&(j + 3)));
                     assert!(adj.contains(&(j + 7)));
-                    if j > 7 {
-                        assert_eq!(adj.len(), 2);
-                    } else {
-                        assert_eq!(adj.len(), 1);
-                    }
+                    assert_eq!(adj.len(), 2);
                 }
 
                 for j in 1..i {
@@ -292,61 +280,6 @@ mod tests {
                     assert_eq!(graph.len(), i - j - 1);
                 }
             }
-        }
-    }
-
-    //-----------------------------------------------------------------------//
-
-    #[test]
-    fn bfs_search() {
-        for i in vec![0, 1, 2, 3] {
-            println!("bfs test with {} layers", i);
-
-            let mut graph = UndirectedGraph::new();
-
-            let mut level = vec![];
-            for m in 1..i + 1 {
-                let mut new_level = vec![];
-                for n in 0..m {
-                    graph.insert_node(m * m + n);
-                    for node in level.clone() {
-                        graph.insert_edge(m * m + n, node);
-                    }
-                    new_level.push(m * m + n);
-                }
-                level = new_level;
-            }
-
-            let tree = breadth_first_search(graph.clone(), 1);
-            println!("{:?}\n{:?}", graph, tree);
-        }
-    }
-
-    //-----------------------------------------------------------------------//
-
-    #[test]
-    fn dfs_search() {
-        for i in vec![0, 1, 2, 3, 4, 5] {
-            println!("dfs test with {} layers", i);
-
-            let mut graph = UndirectedGraph::new();
-
-            let mut level = vec![];
-            for m in 1..i + 1 {
-                let mut new_level = vec![];
-                for n in 0..m {
-                    graph.insert_node(m * m + n);
-                    for node in level.clone() {
-                        graph.insert_edge(m * m + n, node);
-                    }
-                    new_level.push(m * m + n);
-                }
-                level = new_level;
-            }
-
-            let (roots, order, cyclic) = depth_first_search(graph.clone());
-            println!("Graph: {:?}\nOrder: {:?}\nRoots: {:?}", graph, order, roots);
-            assert_eq!(cyclic, i > 1);
         }
     }
 

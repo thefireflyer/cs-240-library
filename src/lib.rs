@@ -30,6 +30,8 @@ pub mod algorithms {
         #[cfg(test)]
         mod shared_test_cases;
     }
+
+    pub mod graphs;
 }
 
 //---------------------------------------------------------------------------//
@@ -103,6 +105,12 @@ pub mod data_structures {
     pub mod graphs;
     pub mod maps;
     pub mod sets;
+}
+
+//---------------------------------------------------------------------------//
+
+pub mod meta {
+    pub mod benchmark;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
