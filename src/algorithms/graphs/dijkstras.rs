@@ -98,6 +98,45 @@ pub fn dijkstras<T: IWeightedGraph>(
 
 ///////////////////////////////////////////////////////////////////////////////
 
+pub fn dijkstras_explore<T: IWeightedGraph>(
+    graph: &T,
+    origin: &T::Node,
+) -> HashMap<T::Node, T::Weight> {
+    let mut dist: HashMap<T::Node, T::Weight> = HashMap::new();
+    let mut res: HashMap<T::Node, T::Weight> = HashMap::new();
+    let mut known: HashSet<T::Node> = HashSet::new();
+
+    dist.insert(origin.clone(), 0.into());
+
+    while let Some((node, weight)) = dist.clone().into_iter().min_by_key(|(_, w)| w.clone()) {
+        dist.remove(&node);
+
+        if !known.contains(&node) {
+            known.insert(node.clone());
+
+            for (adj, edge_weight) in graph.get_adj_weighted(&node) {
+                match (dist.get_mut(&adj), res.get_mut(&adj)) {
+                    (Some(node_weight), Some(adj_pred))
+                        if *node_weight > weight.clone() + edge_weight.clone() =>
+                    {
+                        *node_weight = weight.clone() + edge_weight.clone();
+                        *adj_pred = weight.clone() + edge_weight.clone();
+                    }
+                    (None, None) if adj != *origin => {
+                        dist.insert(adj.clone(), weight.clone() + edge_weight.clone());
+                        res.insert(adj, weight.clone() + edge_weight);
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    return res;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 #[cfg(test)]
 mod tests {
     use crate::{
