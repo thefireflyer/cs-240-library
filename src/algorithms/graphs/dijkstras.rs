@@ -107,6 +107,7 @@ pub fn dijkstras_explore<T: IWeightedGraph>(
     let mut known: HashSet<T::Node> = HashSet::new();
 
     dist.insert(origin.clone(), 0.into());
+    res.insert(origin.clone(), 0.into());
 
     while let Some((node, weight)) = dist.clone().into_iter().min_by_key(|(_, w)| w.clone()) {
         dist.remove(&node);
