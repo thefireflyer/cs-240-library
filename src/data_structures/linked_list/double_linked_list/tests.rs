@@ -83,7 +83,7 @@ fn test_basic() {
 }
 
 //-----------------------------------------------------------------------//
-/*
+
 #[test]
 fn read() {
     let mut list = LinkedList::new();
@@ -110,9 +110,12 @@ fn insert() {
     list.push_front(3);
     list.push_front(1);
 
+    println!("{:?}", list);
     list.insert(1, 2);
+    println!("{:?}", list);
     list.insert(0, 0);
     assert!(list.insert(7, 10).is_none());
+    println!("{:?}", list);
 
     assert_eq!(list.read(0), Some(&0));
     assert_eq!(list.read(1), Some(&1));
@@ -160,7 +163,7 @@ fn search() {
 
     assert_eq!(list.search(8), None);
 }
-
+/*
 #[test]
 fn sort() {
     let mut list = LinkedList::new();
@@ -192,7 +195,7 @@ fn sort() {
     list.sort();
     assert_eq!(list.pop_front(), None);
 }
-
+*/
 #[test]
 fn miri_testing_from_book_ref() {
     let mut list = LinkedList::new();
@@ -230,4 +233,3 @@ fn miri_testing_from_book_ref() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-*/

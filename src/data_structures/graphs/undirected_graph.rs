@@ -10,7 +10,8 @@ use super::{IDefiniteGraph, IGraph, IGraphEdgeMut, IGraphMut};
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct UndirectedGraph<T>
 where
     T: Ord + fmt::Debug + Hash + Clone,

@@ -8,14 +8,14 @@ Very heavily based off [7] (MIT source code)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-use std::{marker::PhantomData, ptr::NonNull};
+use std::{fmt::Debug, marker::PhantomData, process::id, ptr::NonNull};
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(PartialEq, PartialOrd, Debug)]
+#[derive(PartialEq, PartialOrd)]
 pub struct LinkedList<T>
 where
-    T: Ord + std::fmt::Debug,
+    T: Ord,
 {
     front: Cursor<T>,
     back: Cursor<T>,
@@ -33,7 +33,7 @@ type Cursor<T> = Option<NonNull<Node<T>>>;
 #[derive(PartialEq, Debug)]
 struct Node<T>
 where
-    T: Ord + std::fmt::Debug,
+    T: Ord,
 {
     data: T,
     front: Cursor<T>,
@@ -44,7 +44,7 @@ where
 
 impl<T> LinkedList<T>
 where
-    T: Ord + std::fmt::Debug,
+    T: Ord,
 {
     pub fn new() -> Self {
         Self {
@@ -195,44 +195,146 @@ where
 
     //-----------------------------------------------------------------------//
 
-    fn _get(&self, _index: usize) -> Cursor<T> {
-        todo!()
+    fn get(&self, index: usize) -> Cursor<T> {
+        unsafe {
+            let mut cursor;
+            let indices;
+            let back;
+
+            if index < self.len / 2 {
+                cursor = self.front;
+                indices = 0..index;
+                back = true;
+            } else if index < self.len {
+                cursor = self.back;
+                indices = index + 1..self.len;
+                back = false;
+            } else {
+                return None;
+            }
+
+            for _ in indices {
+                if let Some(curr) = cursor {
+                    if back {
+                        cursor = (*curr.as_ptr()).back;
+                    } else {
+                        cursor = (*curr.as_ptr()).front;
+                    }
+                } else {
+                    return None;
+                }
+            }
+
+            // let mut cursor = self.front;
+
+            // for _ in 0..index {
+            //     if let Some(curr) = cursor {
+            //         cursor = (*curr.as_ptr()).back;
+            //     } else {
+            //         return None;
+            //     }
+            // }
+
+            cursor
+        }
     }
 
     //-----------------------------------------------------------------------//
 
-    pub fn read<'a>(&'a self, _index: usize) -> Option<&'a T> {
-        todo!()
+    pub fn read<'a>(&'a self, index: usize) -> Option<&'a T> {
+        unsafe { self.get(index).map(|node| &(*node.as_ptr()).data) }
     }
 
     //-----------------------------------------------------------------------//
 
-    pub fn insert(&mut self, _index: usize, _value: T) -> Option<()> {
-        todo!()
+    pub fn insert(&mut self, index: usize, value: T) -> Option<()> {
+        unsafe {
+            if index == 0 {
+                Some(self.push_front(value))
+            } else if index + 1 == self.len {
+                Some(self.push_back(value))
+            } else {
+                self.get(index).and_then(|nex| {
+                    println!("okay");
+                    (*nex.as_ptr()).front.and_then(|prev| {
+                        println!("okay2");
+                        println!("{:?}, {:?}", nex, prev);
+                        let nexw = Some(nex);
+                        let prevw = Some(prev);
+                        println!("{:?}, {:?}", nexw, prevw);
+
+                        let node = NonNull::new_unchecked(Box::into_raw(Box::new(Node {
+                            back: None,
+                            front: None,
+                            data: value,
+                        })));
+
+                        println!("{:?}, {:?}, {:?}", nex, prev, node);
+
+                        let nodew = Some(node);
+
+                        (*prev.as_ptr()).back = nodew;
+                        (*nex.as_ptr()).front = nodew;
+
+                        (*node.as_ptr()).back = nexw;
+                        (*node.as_ptr()).front = prevw;
+
+                        self.len += 1;
+
+                        Some(())
+                    })
+                })
+            }
+        }
     }
 
-    pub fn delete(&mut self, _index: usize) -> Option<()> {
-        todo!()
+    pub fn delete(&mut self, index: usize) -> Option<T> {
+        unsafe {
+            if index == 0 {
+                self.pop_front()
+            } else if index + 1 == self.len {
+                self.pop_back()
+            } else {
+                self.get(index).and_then(|tar| {
+                    (*tar.as_ptr()).front.and_then(|prev| {
+                        let boxed_node = Box::from_raw(tar.as_ptr());
+                        let result = boxed_node.data;
+                        (*prev.as_ptr()).back = (*tar.as_ptr()).back;
+
+                        Some(result)
+                    })
+                })
+            }
+        }
     }
 
     //-----------------------------------------------------------------------//
 
-    pub fn search(&self, _value: T) -> Option<usize> {
-        todo!()
+    pub fn search(&self, value: T) -> Option<usize> {
+        unsafe {
+            let mut cursor = self.front;
+
+            for i in 0..self.len {
+                if let Some(curr) = cursor {
+                    if (*curr.as_ptr()).data == value {
+                        return Some(i);
+                    } else {
+                        cursor = (*curr.as_ptr()).back;
+                    }
+                }
+            }
+            None
+        }
     }
 
     //-----------------------------------------------------------------------//
-
-    pub fn sort(&mut self) {
-        todo!()
-    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 impl<T> Drop for LinkedList<T>
 where
-    T: Ord + std::fmt::Debug,
+    T: Ord,
 {
     fn drop(&mut self) {
         while self.pop_front().is_some() {}
@@ -243,7 +345,7 @@ where
 
 pub struct Iter<'a, T>
 where
-    T: Ord + std::fmt::Debug,
+    T: Ord,
 {
     front: Cursor<T>,
     _back: Cursor<T>,
@@ -255,7 +357,7 @@ where
 
 impl<'a, T> Iterator for Iter<'a, T>
 where
-    T: Ord + std::fmt::Debug,
+    T: Ord,
 {
     type Item = &'a T;
 
@@ -280,7 +382,7 @@ where
 
 pub struct IterMut<'a, T>
 where
-    T: Ord + std::fmt::Debug,
+    T: Ord,
 {
     front: Cursor<T>,
     _back: Cursor<T>,
@@ -292,7 +394,7 @@ where
 
 impl<'a, T> Iterator for IterMut<'a, T>
 where
-    T: Ord + std::fmt::Debug + Clone,
+    T: Ord,
 {
     type Item = &'a mut T;
 
@@ -317,7 +419,7 @@ where
 
 pub struct IntoIter<T>
 where
-    T: Ord + std::fmt::Debug + Clone,
+    T: Ord,
 {
     list: LinkedList<T>,
 }
@@ -326,7 +428,7 @@ where
 
 impl<T> Iterator for IntoIter<T>
 where
-    T: Ord + std::fmt::Debug + Clone,
+    T: Ord,
 {
     type Item = T;
 
@@ -343,7 +445,7 @@ where
 
 impl<T> IntoIterator for LinkedList<T>
 where
-    T: Ord + std::fmt::Debug + Clone,
+    T: Ord,
 {
     type IntoIter = IntoIter<T>;
     type Item = T;
@@ -357,13 +459,29 @@ where
 
 impl<'a, T> IntoIterator for &'a LinkedList<T>
 where
-    T: Ord + std::fmt::Debug + Clone,
+    T: Ord,
 {
     type IntoIter = Iter<'a, T>;
     type Item = &'a T;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+impl<T> Debug for LinkedList<T>
+where
+    T: Ord + Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LinkedList")
+            .field("front", &(self.front, self.front()))
+            .field("back", &(self.back, self.back()))
+            .field("len", &self.len)
+            .field("_ghost", &self._ghost)
+            .finish()
     }
 }
 

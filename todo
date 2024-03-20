@@ -1,0 +1,11 @@
+[x] implement doubly linked list
+[x] implement binary search tree
+[ ] implement avl tree
+[ ] copy over levenshtein
+[ ] old stuff, optional redo, otherwise link old c# code
+    [ ] implement stack (linked)
+    [ ] implement stack (array)
+    [ ] implement queue (linked)
+    [ ] implement queue (array)
+    [ ] implement hashset (array)
+[ ] benchmarking

@@ -11,7 +11,8 @@ use super::{IDefiniteGraph, IGraph, IGraphEdgeWeightedMut, IGraphMut, IWeightedG
 
 ///////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct WeightedGraph<T, W>
 where
     T: Ord + fmt::Debug + Hash + Clone,
